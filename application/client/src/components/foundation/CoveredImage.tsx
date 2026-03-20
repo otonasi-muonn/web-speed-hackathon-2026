@@ -1,4 +1,3 @@
-import { load, ImageIFD } from "piexifjs";
 import { MouseEvent, useCallback, useId, useState } from "react";
 
 import { Button } from "@web-speed-hackathon-2026/client/src/components/foundation/Button";
@@ -11,7 +10,11 @@ interface Props {
 
 const altCache = new WeakMap<ArrayBuffer, string>();
 
-function extractAlt(data: ArrayBuffer): string {
+function extractAlt(
+  data: ArrayBuffer,
+  load: (binary: string) => Record<string, Record<number, string>>,
+  ImageIFD: Record<string, number>,
+): string {
   if (altCache.has(data)) {
     return altCache.get(data) ?? "";
   }
@@ -46,7 +49,8 @@ export const CoveredImage = ({ src }: Props) => {
     setIsLoadingAlt(true);
     try {
       const data = await fetchBinaryCached(src);
-      setAlt(extractAlt(data));
+      const { load, ImageIFD } = await import("piexifjs");
+      setAlt(extractAlt(data, load, ImageIFD));
     } catch {
       setAlt("");
     } finally {

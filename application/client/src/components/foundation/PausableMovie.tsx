@@ -12,10 +12,12 @@ interface Props {
  * クリックすると再生・一時停止を切り替えます。
  */
 export const PausableMovie = ({ src }: Props) => {
+  const thumbSrc = src.replace(".webp", "_thumb.jpg");
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
+  const frameCountRef = useRef<number>(0);
   const [isNearViewport, setIsNearViewport] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -36,7 +38,7 @@ export const PausableMovie = ({ src }: Props) => {
     return () => observer.disconnect();
   }, []);
 
-  // Draw animated WebP/GIF to canvas using requestAnimationFrame
+  // Draw animated WebP to canvas using requestAnimationFrame at 15fps
   useEffect(() => {
     const img = imgRef.current;
     const canvas = canvasRef.current;
@@ -50,14 +52,17 @@ export const PausableMovie = ({ src }: Props) => {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
-      // Just draw first frame, don't animate
       ctx.drawImage(img, 0, 0);
       setIsPlaying(false);
       return;
     }
 
+    frameCountRef.current = 0;
     function draw() {
-      ctx!.drawImage(img!, 0, 0);
+      frameCountRef.current++;
+      if (frameCountRef.current % 4 === 0) {
+        ctx!.drawImage(img!, 0, 0);
+      }
       rafRef.current = requestAnimationFrame(draw);
     }
     rafRef.current = requestAnimationFrame(draw);
@@ -79,8 +84,12 @@ export const PausableMovie = ({ src }: Props) => {
     if (!isPlaying) {
       cancelAnimationFrame(rafRef.current);
     } else {
+      frameCountRef.current = 0;
       function draw() {
-        ctx!.drawImage(img!, 0, 0);
+        frameCountRef.current++;
+        if (frameCountRef.current % 4 === 0) {
+          ctx!.drawImage(img!, 0, 0);
+        }
         rafRef.current = requestAnimationFrame(draw);
       }
       rafRef.current = requestAnimationFrame(draw);
@@ -98,26 +107,27 @@ export const PausableMovie = ({ src }: Props) => {
 
   return (
     <AspectRatioBox aspectHeight={1} aspectWidth={1}>
-      <div ref={containerRef} className="h-full w-full">
-        {isNearViewport ? (
+      <div ref={containerRef} className="relative h-full w-full">
+        {/* Thumbnail: LCP element shown immediately before canvas is ready */}
+        {!isLoaded && (
+          <img
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            src={thumbSrc}
+          />
+        )}
+        {isNearViewport && (
           <>
-            {/* Hidden img starts loading; only shown after load */}
-            <img
-              ref={imgRef}
-              alt=""
-              className="hidden"
-              onLoad={handleLoad}
-              src={src}
-            />
-            {isLoaded ? (
+            {/* Hidden img loads the animated WebP in the background */}
+            <img ref={imgRef} alt="" className="hidden" onLoad={handleLoad} src={src} />
+            {isLoaded && (
               <button
                 aria-label="動画プレイヤー"
-                className="group relative block h-full w-full"
+                className="group absolute inset-0 block h-full w-full"
                 onClick={handleClick}
                 type="button"
               >
-                {/* Canvas displays animation and is visible to E2E tests */}
-                <canvas ref={canvasRef} className="w-full" />
+                <canvas ref={canvasRef} className="h-full w-full" />
                 <div
                   className={classNames(
                     "absolute left-1/2 top-1/2 flex items-center justify-center w-16 h-16 text-cax-surface-raised text-3xl bg-cax-overlay/50 rounded-full -translate-x-1/2 -translate-y-1/2",
@@ -129,9 +139,9 @@ export const PausableMovie = ({ src }: Props) => {
                   <FontAwesomeIcon iconType={isPlaying ? "pause" : "play"} styleType="solid" />
                 </div>
               </button>
-            ) : null}
+            )}
           </>
-        ) : null}
+        )}
       </div>
     </AspectRatioBox>
   );

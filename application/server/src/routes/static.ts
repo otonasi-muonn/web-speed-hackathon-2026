@@ -10,7 +10,7 @@ import {
 
 export const staticRouter = Router();
 
-const STATIC_MAX_AGE_SECONDS = 300;
+const STATIC_MAX_AGE_SECONDS = 86400;
 
 const HASH_ASSET_RE = /\.[0-9a-f]{8,}\.(js|css|woff2?)$/i;
 
