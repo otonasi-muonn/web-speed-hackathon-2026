@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useId, useState } from "react";
 import { useNavigate } from "react-router";
 
-import { NewPostModalPage } from "@web-speed-hackathon-2026/client/src/components/new_post_modal/NewPostModalPage";
 import { sendFile, sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
+
+const NewPostModalPage = lazy(() =>
+  import(
+    "@web-speed-hackathon-2026/client/src/components/new_post_modal/NewPostModalPage"
+  ).then((m) => ({ default: m.NewPostModalPage })),
+);
 
 interface SubmitParams {
   images: File[];
@@ -35,6 +40,7 @@ function getCheckbox(id: string): HTMLInputElement | null {
 
 export const NewPostModalContainer = ({ id }: Props) => {
   const dialogId = useId();
+  const [isOpen, setIsOpen] = useState(false);
   const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
@@ -42,7 +48,7 @@ export const NewPostModalContainer = ({ id }: Props) => {
     if (!checkbox) return;
 
     const handleChange = () => {
-      // Reset form state when modal closes
+      setIsOpen(checkbox.checked);
       if (!checkbox.checked) {
         setResetKey((key) => key + 1);
       }
@@ -95,14 +101,18 @@ export const NewPostModalContainer = ({ id }: Props) => {
         aria-labelledby={dialogId}
         className="bg-cax-surface relative z-50 m-0 w-full max-w-[calc(min(var(--container-md),100%)-var(--spacing)*4)] rounded-lg border-none p-4"
       >
-        <NewPostModalPage
-          key={resetKey}
-          id={dialogId}
-          hasError={hasError}
-          isLoading={isLoading}
-          onResetError={handleResetError}
-          onSubmit={handleSubmit}
-        />
+        {isOpen ? (
+          <Suspense fallback={<div className="p-4 text-center">読込中...</div>}>
+            <NewPostModalPage
+              key={resetKey}
+              id={dialogId}
+              hasError={hasError}
+              isLoading={isLoading}
+              onResetError={handleResetError}
+              onSubmit={handleSubmit}
+            />
+          </Suspense>
+        ) : null}
       </dialog>
     </div>
   );

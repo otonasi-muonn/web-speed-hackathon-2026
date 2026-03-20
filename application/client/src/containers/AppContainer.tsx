@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { Helmet, HelmetProvider } from "react-helmet";
+import { HelmetProvider } from "react-helmet";
 import { createPortal } from "react-dom";
 import { Route, Routes, useLocation, useNavigate } from "react-router";
 
@@ -46,16 +46,11 @@ export const AppContainer = () => {
   }, [pathname]);
 
   const [activeUser, setActiveUser] = useState<Models.User | null>(null);
-  const [isLoadingActiveUser, setIsLoadingActiveUser] = useState(true);
   useEffect(() => {
-    void fetchJSON<Models.User>("/api/v1/me")
-      .then((user) => {
-        setActiveUser(user);
-      })
-      .finally(() => {
-        setIsLoadingActiveUser(false);
-      });
-  }, [setActiveUser, setIsLoadingActiveUser]);
+    void fetchJSON<Models.User>("/api/v1/me").then((user) => {
+      setActiveUser(user);
+    });
+  }, []);
   const handleLogout = useCallback(async () => {
     await sendJSON("/api/v1/signout", {});
     setActiveUser(null);
@@ -63,16 +58,6 @@ export const AppContainer = () => {
   }, [navigate]);
 
   const navRoot = document.getElementById("ccss-nav-root");
-
-  if (isLoadingActiveUser) {
-    return (
-      <HelmetProvider>
-        <Helmet>
-          <title>読込中 - CaX</title>
-        </Helmet>
-      </HelmetProvider>
-    );
-  }
 
   return (
     <HelmetProvider>

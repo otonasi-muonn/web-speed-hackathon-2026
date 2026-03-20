@@ -11,13 +11,10 @@ import { getProfileImagePath } from "@web-speed-hackathon-2026/client/src/utils/
 const isClickedAnchorOrButton = (target: EventTarget | null, currentTarget: Element): boolean => {
   while (target !== null && target instanceof Element) {
     const tagName = target.tagName.toLowerCase();
-    if (["button", "a"].includes(tagName)) {
-      return true;
-    }
-    if (currentTarget === target) {
-      return false;
-    }
-    target = target.parentNode;
+    if (tagName === "a") return true;
+    if (tagName === "button" && target.getAttribute("aria-label") !== "動画プレイヤー") return true;
+    if (currentTarget === target) return false;
+    target = target.parentNode as Element | null;
   }
   return false;
 };
