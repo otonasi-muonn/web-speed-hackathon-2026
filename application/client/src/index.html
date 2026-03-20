@@ -4,10 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CaX</title>
-    <script src="/scripts/main.js"></script>
+    <script src="/scripts/main.js" defer></script>
     <link rel="stylesheet" href="/styles/main.css" />
   </head>
   <body class="bg-cax-canvas text-cax-text">
-    <div id="app"></div>
+    <!-- CCSS State Inputs: modal open/close controlled by CSS :has() -->
+    <input type="checkbox" id="ccss-auth-modal" class="ccss-state-input" />
+    <input type="checkbox" id="ccss-new-post-modal" class="ccss-state-input" />
+
+    <!-- CCSS Shell Root: pre-rendered layout (FCP improvement) -->
+    <div id="ccss-shell-root" class="relative z-0 flex justify-center font-sans">
+      <div class="bg-cax-surface text-cax-text flex min-h-screen max-w-full">
+        <aside id="ccss-nav-root" class="relative z-10">
+          <!-- Navigation portaled here by React -->
+        </aside>
+        <div id="app" class="relative z-0 w-screen max-w-screen-sm min-w-0 shrink pb-12 lg:pb-0">
+          <!-- React content rendered here -->
+        </div>
+      </div>
+    </div>
   </body>
 </html>

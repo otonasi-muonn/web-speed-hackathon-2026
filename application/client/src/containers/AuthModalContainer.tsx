@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SubmissionError } from "redux-form";
 
 import { AuthFormData } from "@web-speed-hackathon-2026/client/src/auth/types";
 import { AuthModalPage } from "@web-speed-hackathon-2026/client/src/components/auth_modal/AuthModalPage";
-import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Modal";
 import { sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
 interface Props {
@@ -35,26 +34,37 @@ function getErrorCode(err: JQuery.jqXHR<unknown>, type: "signin" | "signup"): st
   return ERROR_MESSAGES[responseJSON.code]!;
 }
 
-export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
-  const ref = useRef<HTMLDialogElement>(null);
-  const [resetKey, setResetKey] = useState(0);
-  useEffect(() => {
-    if (!ref.current) return;
-    const element = ref.current;
+function getCheckbox(id: string): HTMLInputElement | null {
+  const el = document.getElementById(id);
+  return el instanceof HTMLInputElement ? el : null;
+}
 
-    const handleToggle = () => {
-      // モーダル開閉時にkeyを更新することでフォームの状態をリセットする
-      setResetKey((key) => key + 1);
+export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
+  const [resetKey, setResetKey] = useState(0);
+
+  useEffect(() => {
+    const checkbox = getCheckbox(id);
+    if (!checkbox) return;
+
+    const handleChange = () => {
+      // Reset form state when modal closes
+      if (!checkbox.checked) {
+        setResetKey((key) => key + 1);
+      }
     };
-    element.addEventListener("toggle", handleToggle);
+    checkbox.addEventListener("change", handleChange);
     return () => {
-      element.removeEventListener("toggle", handleToggle);
+      checkbox.removeEventListener("change", handleChange);
     };
-  }, [ref, setResetKey]);
+  }, [id]);
 
   const handleRequestCloseModal = useCallback(() => {
-    ref.current?.close();
-  }, [ref]);
+    const checkbox = getCheckbox(id);
+    if (checkbox) {
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }, [id]);
 
   const handleSubmit = useCallback(
     async (values: AuthFormData) => {
@@ -78,12 +88,16 @@ export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
   );
 
   return (
-    <Modal id={id} ref={ref} closedby="any">
-      <AuthModalPage
-        key={resetKey}
-        onRequestCloseModal={handleRequestCloseModal}
-        onSubmit={handleSubmit}
-      />
-    </Modal>
+    <div className="ccss-modal-overlay auth-modal-overlay">
+      {/* Backdrop - click to close */}
+      <div className="bg-cax-overlay/50 fixed inset-0 z-40" onClick={handleRequestCloseModal} />
+      <div className="bg-cax-surface relative z-50 w-full max-w-[calc(min(var(--container-md),100%)-var(--spacing)*4)] rounded-lg p-4">
+        <AuthModalPage
+          key={resetKey}
+          onRequestCloseModal={handleRequestCloseModal}
+          onSubmit={handleSubmit}
+        />
+      </div>
+    </div>
   );
 };

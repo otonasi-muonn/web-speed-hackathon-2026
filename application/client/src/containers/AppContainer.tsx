@@ -1,8 +1,9 @@
-import { lazy, Suspense, useCallback, useEffect, useId, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Helmet, HelmetProvider } from "react-helmet";
+import { createPortal } from "react-dom";
 import { Route, Routes, useLocation, useNavigate } from "react-router";
 
-import { AppPage } from "@web-speed-hackathon-2026/client/src/components/application/AppPage";
+import { Navigation } from "@web-speed-hackathon-2026/client/src/components/application/Navigation";
 import { AuthModalContainer } from "@web-speed-hackathon-2026/client/src/containers/AuthModalContainer";
 import { NewPostModalContainer } from "@web-speed-hackathon-2026/client/src/containers/NewPostModalContainer";
 import { NotFoundContainer } from "@web-speed-hackathon-2026/client/src/containers/NotFoundContainer";
@@ -33,6 +34,10 @@ const SearchContainer = lazy(() =>
   })),
 );
 
+// Static CCSS modal IDs (matching index.html checkboxes)
+const AUTH_MODAL_ID = "ccss-auth-modal";
+const NEW_POST_MODAL_ID = "ccss-new-post-modal";
+
 export const AppContainer = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -57,8 +62,7 @@ export const AppContainer = () => {
     navigate("/");
   }, [navigate]);
 
-  const authModalId = useId();
-  const newPostModalId = useId();
+  const navRoot = document.getElementById("ccss-nav-root");
 
   if (isLoadingActiveUser) {
     return (
@@ -72,23 +76,30 @@ export const AppContainer = () => {
 
   return (
     <HelmetProvider>
-      <AppPage
-        activeUser={activeUser}
-        authModalId={authModalId}
-        newPostModalId={newPostModalId}
-        onLogout={handleLogout}
-      >
+      {navRoot
+        ? createPortal(
+            <Navigation
+              activeUser={activeUser}
+              authModalId={AUTH_MODAL_ID}
+              newPostModalId={NEW_POST_MODAL_ID}
+              onLogout={handleLogout}
+            />,
+            navRoot,
+          )
+        : null}
+
+      <main>
         <Suspense fallback={null}>
           <Routes>
             <Route element={<TimelineContainer />} path="/" />
             <Route
               element={
-                <DirectMessageListContainer activeUser={activeUser} authModalId={authModalId} />
+                <DirectMessageListContainer activeUser={activeUser} authModalId={AUTH_MODAL_ID} />
               }
               path="/dm"
             />
             <Route
-              element={<DirectMessageContainer activeUser={activeUser} authModalId={authModalId} />}
+              element={<DirectMessageContainer activeUser={activeUser} authModalId={AUTH_MODAL_ID} />}
               path="/dm/:conversationId"
             />
             <Route element={<SearchContainer />} path="/search" />
@@ -96,16 +107,16 @@ export const AppContainer = () => {
             <Route element={<PostContainer />} path="/posts/:postId" />
             <Route element={<TermContainer />} path="/terms" />
             <Route
-              element={<CrokContainer activeUser={activeUser} authModalId={authModalId} />}
+              element={<CrokContainer activeUser={activeUser} authModalId={AUTH_MODAL_ID} />}
               path="/crok"
             />
             <Route element={<NotFoundContainer />} path="*" />
           </Routes>
         </Suspense>
-      </AppPage>
+      </main>
 
-      <AuthModalContainer id={authModalId} onUpdateActiveUser={setActiveUser} />
-      <NewPostModalContainer id={newPostModalId} />
+      <AuthModalContainer id={AUTH_MODAL_ID} onUpdateActiveUser={setActiveUser} />
+      <NewPostModalContainer id={NEW_POST_MODAL_ID} />
     </HelmetProvider>
   );
 };

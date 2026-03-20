@@ -190,6 +190,8 @@ directMessageRouter.post("/dm/:conversationId/messages", async (req, res) => {
   });
   await message.reload();
 
+  eventhub.emit(`dm:conversation/${conversation.id}:message`, message);
+
   return res.status(201).type("application/json").send(message);
 });
 

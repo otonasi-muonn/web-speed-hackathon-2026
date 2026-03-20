@@ -36,26 +36,37 @@ export const DirectMessagePage = ({
 }: Props) => {
   const formRef = useRef<HTMLFormElement>(null);
   const textAreaId = useId();
+  const isComposingRef = useRef(false);
 
   const peer =
     conversation.initiator.id !== activeUser.id ? conversation.initiator : conversation.member;
 
   const [text, setText] = useState("");
+  const textRef = useRef("");
   const textAreaRows = Math.min((text || "").split("\n").length, 5);
   const isInvalid = text.trim().length === 0;
   const scrollHeightRef = useRef(0);
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
+      textRef.current = event.target.value;
       setText(event.target.value);
       onTyping();
     },
     [onTyping],
   );
 
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
+
+  const handleCompositionEnd = useCallback(() => {
+    isComposingRef.current = false;
+  }, []);
+
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      if (event.key === "Enter" && !event.shiftKey && !isComposingRef.current) {
         event.preventDefault();
         formRef.current?.requestSubmit();
       }
@@ -66,11 +77,14 @@ export const DirectMessagePage = ({
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      void onSubmit({ body: text.trim() }).then(() => {
+      const body = textRef.current.trim();
+      if (!body) return;
+      void onSubmit({ body }).then(() => {
+        textRef.current = "";
         setText("");
       });
     },
-    [onSubmit, text],
+    [onSubmit],
   );
 
   useEffect(() => {
@@ -119,7 +133,7 @@ export const DirectMessagePage = ({
         )}
 
         <ul className="grid gap-3" data-testid="dm-message-list">
-          {conversation.messages.map((message) => {
+          {[...conversation.messages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message) => {
             const isActiveUserSend = message.sender.id === activeUser.id;
 
             return (
@@ -174,6 +188,8 @@ export const DirectMessagePage = ({
               className="border-cax-border placeholder-cax-text-subtle focus:outline-cax-brand w-full resize-none rounded-xl border px-3 py-2 focus:outline-2 focus:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={text}
               onChange={handleChange}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
               onKeyDown={handleKeyDown}
               rows={textAreaRows}
               disabled={isSubmitting}

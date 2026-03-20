@@ -2,6 +2,7 @@
 
 @import "normalize.css" layer(normalize);
 @import "./tailwind.css";
+@import "./ccss/ui.generated.css";
 
 @font-face {
   /* Source Han Serif JP Regular の Y 軸を 1/1.43 に縮小した改変フォント */
@@ -23,4 +24,30 @@
   height: 1em;
   vertical-align: -0.125em;
   width: 1em;
+}
+
+/* CCSS Modal Overlay: CSS checkbox state management (TBT improvement) */
+.ccss-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+}
+
+body:has(#ccss-auth-modal:checked) .auth-modal-overlay {
+  display: flex;
+}
+
+body:has(#ccss-new-post-modal:checked) .new-post-modal-overlay {
+  display: flex;
+}
+
+/* CCSS Modal Panel (replaces dialog) */
+.ccss-modal-panel {
+  position: relative;
+  z-index: 51;
+  max-height: 90vh;
+  overflow-y: auto;
 }
