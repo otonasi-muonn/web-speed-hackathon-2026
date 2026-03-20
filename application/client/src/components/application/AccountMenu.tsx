@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useRef } from "react";
 
 import { getProfileImagePath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
 
@@ -8,34 +8,43 @@ interface Props {
 }
 
 export const AccountMenu = ({ user, onLogout }: Props) => {
-  const [open, setOpen] = useState(false);
+  const checkboxRef = useRef<HTMLInputElement>(null);
+
+  const handleLogout = useCallback(() => {
+    if (checkboxRef.current) checkboxRef.current.checked = false;
+    onLogout();
+  }, [onLogout]);
+
+  const handleBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      if (checkboxRef.current) checkboxRef.current.checked = false;
+    }
+  }, []);
 
   return (
     <div
       className="relative hidden lg:block lg:w-full lg:pb-2"
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-          setOpen(false);
-        }
-      }}
+      onBlur={handleBlur}
     >
-      {open && (
-        <div className="border-cax-border bg-cax-surface absolute bottom-full left-0 mb-2 w-full overflow-hidden rounded-xl border py-1 shadow-lg">
-          <button
-            className="text-cax-text hover:bg-cax-surface-subtle w-full px-4 py-3 text-left text-sm font-bold"
-            onClick={() => {
-              setOpen(false);
-              onLogout();
-            }}
-          >
-            サインアウト
-          </button>
-        </div>
-      )}
-      <button
+      <input
+        ref={checkboxRef}
+        type="checkbox"
+        id="ccss-account-menu"
+        className="ccss-state-input"
+      />
+      <div className="account-menu-dropdown border-cax-border bg-cax-surface absolute bottom-full left-0 mb-2 w-full overflow-hidden rounded-xl border py-1 shadow-lg">
+        <button
+          className="text-cax-text hover:bg-cax-surface-subtle w-full px-4 py-3 text-left text-sm font-bold"
+          onClick={handleLogout}
+        >
+          サインアウト
+        </button>
+      </div>
+      <label
         aria-label="アカウントメニュー"
-        className="hover:bg-cax-surface-subtle flex w-full items-center gap-3 rounded-full p-2 transition-colors"
-        onClick={() => setOpen((prev) => !prev)}
+        htmlFor="ccss-account-menu"
+        className="hover:bg-cax-surface-subtle flex w-full items-center gap-3 rounded-full p-2 transition-colors cursor-pointer"
+        tabIndex={0}
       >
         <img
           alt={user.profileImage.alt}
@@ -47,7 +56,7 @@ export const AccountMenu = ({ user, onLogout }: Props) => {
           <div className="text-cax-text-muted truncate text-sm">@{user.username}</div>
         </div>
         <span className="text-cax-text-muted hidden lg:block">···</span>
-      </button>
+      </label>
     </div>
   );
 };

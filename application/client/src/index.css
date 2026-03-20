@@ -44,6 +44,15 @@ body:has(#ccss-new-post-modal:checked) .new-post-modal-overlay {
   display: flex;
 }
 
+/* CCSS AccountMenu dropdown */
+.account-menu-dropdown {
+  display: none;
+}
+
+body:has(#ccss-account-menu:checked) .account-menu-dropdown {
+  display: block;
+}
+
 /* CCSS Modal Panel (replaces dialog) */
 .ccss-modal-panel {
   position: relative;
