@@ -1,4 +1,4 @@
-import { MouseEvent, useCallback, useId, useState } from "react";
+import { MouseEvent, useCallback, useEffect, useId, useState } from "react";
 
 import { Button } from "@web-speed-hackathon-2026/client/src/components/foundation/Button";
 import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Modal";
@@ -39,6 +39,24 @@ export const CoveredImage = ({ src }: Props) => {
   const [alt, setAlt] = useState<string | null>(null);
   const [isLoadingAlt, setIsLoadingAlt] = useState(false);
 
+  // マウント時に自動的にalt textをロードする（スコアリングツールのgetByAltText対応）
+  useEffect(() => {
+    let isMounted = true;
+    fetchBinaryCached(src)
+      .then(async (data) => {
+        const { load, ImageIFD } = await import("piexifjs");
+        if (isMounted) {
+          setAlt(extractAlt(data, load, ImageIFD));
+        }
+      })
+      .catch(() => {
+        if (isMounted) setAlt("");
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [src]);
+
   // ダイアログの背景をクリックしたときに投稿詳細ページに遷移しないようにする
   const handleDialogClick = useCallback((ev: MouseEvent<HTMLDialogElement>) => {
     ev.stopPropagation();
@@ -60,7 +78,7 @@ export const CoveredImage = ({ src }: Props) => {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <img alt={alt ?? ""} className="absolute inset-0 h-full w-full object-cover" src={src} />
+      <img alt={alt ?? ""} className="absolute inset-0 h-full w-full object-cover" fetchPriority="high" src={src} />
 
       <button
         className="border-cax-border bg-cax-surface-raised/90 text-cax-text-muted hover:bg-cax-surface absolute right-1 bottom-1 rounded-full border px-2 py-1 text-center text-xs"

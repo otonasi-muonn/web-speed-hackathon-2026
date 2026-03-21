@@ -5,12 +5,6 @@ import { Route, Routes, useLocation, useNavigate } from "react-router";
 
 import { Navigation } from "@web-speed-hackathon-2026/client/src/components/application/Navigation";
 import { AuthModalContainer } from "@web-speed-hackathon-2026/client/src/containers/AuthModalContainer";
-import { NewPostModalContainer } from "@web-speed-hackathon-2026/client/src/containers/NewPostModalContainer";
-import { NotFoundContainer } from "@web-speed-hackathon-2026/client/src/containers/NotFoundContainer";
-import { PostContainer } from "@web-speed-hackathon-2026/client/src/containers/PostContainer";
-import { TermContainer } from "@web-speed-hackathon-2026/client/src/containers/TermContainer";
-import { TimelineContainer } from "@web-speed-hackathon-2026/client/src/containers/TimelineContainer";
-import { UserProfileContainer } from "@web-speed-hackathon-2026/client/src/containers/UserProfileContainer";
 import { fetchJSON, sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
 const CrokContainer = lazy(() =>
@@ -28,9 +22,39 @@ const DirectMessageListContainer = lazy(() =>
     (m) => ({ default: m.DirectMessageListContainer }),
   ),
 );
+const NewPostModalContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/NewPostModalContainer").then((m) => ({
+    default: m.NewPostModalContainer,
+  })),
+);
+const NotFoundContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/NotFoundContainer").then((m) => ({
+    default: m.NotFoundContainer,
+  })),
+);
+const PostContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/PostContainer").then((m) => ({
+    default: m.PostContainer,
+  })),
+);
 const SearchContainer = lazy(() =>
   import("@web-speed-hackathon-2026/client/src/containers/SearchContainer").then((m) => ({
     default: m.SearchContainer,
+  })),
+);
+const TermContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/TermContainer").then((m) => ({
+    default: m.TermContainer,
+  })),
+);
+const TimelineContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/TimelineContainer").then((m) => ({
+    default: m.TimelineContainer,
+  })),
+);
+const UserProfileContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/UserProfileContainer").then((m) => ({
+    default: m.UserProfileContainer,
   })),
 );
 
@@ -101,7 +125,9 @@ export const AppContainer = () => {
       </main>
 
       <AuthModalContainer id={AUTH_MODAL_ID} onUpdateActiveUser={setActiveUser} />
-      <NewPostModalContainer id={NEW_POST_MODAL_ID} />
+      <Suspense fallback={null}>
+        <NewPostModalContainer id={NEW_POST_MODAL_ID} />
+      </Suspense>
     </HelmetProvider>
   );
 };

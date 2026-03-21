@@ -50,28 +50,33 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
     const isValid = files.every((file) => file.size <= MAX_UPLOAD_BYTES_LIMIT);
 
     setHasFileError(isValid !== true);
-    if (isValid) {
-      setIsConverting(true);
+    if (!isValid) return;
 
-      Promise.all(
-        files.map((file) =>
-          convertImage(file, { extension: MagickFormat.Jpg }).then(
-            (blob) => new File([blob], "converted.jpg", { type: "image/jpeg" }),
-          ),
-        ),
-      )
-        .then((convertedFiles) => {
-          setParams((params) => ({
-            ...params,
-            images: convertedFiles,
-            movie: undefined,
-            sound: undefined,
-          }));
-
-          setIsConverting(false);
-        })
-        .catch(console.error);
+    const allJpeg = files.every((f) => f.type === "image/jpeg");
+    if (allJpeg) {
+      setParams((params) => ({ ...params, images: files, movie: undefined, sound: undefined }));
+      return;
     }
+
+    setIsConverting(true);
+    Promise.all(
+      files.map((file) => {
+        if (file.type === "image/jpeg") return Promise.resolve(file);
+        return convertImage(file, { extension: MagickFormat.Jpg }).then(
+          (blob) => new File([blob], "converted.jpg", { type: "image/jpeg" }),
+        );
+      }),
+    )
+      .then((convertedFiles) => {
+        setParams((params) => ({
+          ...params,
+          images: convertedFiles,
+          movie: undefined,
+          sound: undefined,
+        }));
+        setIsConverting(false);
+      })
+      .catch(console.error);
   }, []);
 
   const handleChangeSound = useCallback<ChangeEventHandler<HTMLInputElement>>((ev) => {
