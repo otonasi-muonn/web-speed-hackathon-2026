@@ -4,6 +4,7 @@ import path from "path";
 import { Router } from "express";
 import { fileTypeFromBuffer } from "file-type";
 import httpErrors from "http-errors";
+import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 
 import { UPLOAD_PATH } from "@web-speed-hackathon-2026/server/src/paths";
@@ -30,7 +31,13 @@ imageRouter.post("/images", async (req, res) => {
   // 常に jpg として保存（クライアントの getImagePath は .jpg を期待するため）
   const filePath = path.resolve(UPLOAD_PATH, `./images/${imageId}.jpg`);
   await fs.mkdir(path.resolve(UPLOAD_PATH, "images"), { recursive: true });
-  await fs.writeFile(filePath, req.body);
+
+  // アップロード時に max 1200px にリサイズ・圧縮して保存（LCP 改善）
+  const optimized = await sharp(req.body)
+    .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 85, progressive: true })
+    .toBuffer();
+  await fs.writeFile(filePath, optimized);
 
   return res.status(200).type("application/json").send({ id: imageId });
 });
