@@ -35,6 +35,7 @@ imageRouter.post("/images", async (req, res) => {
   // アップロード時に max 1200px にリサイズ・圧縮して保存（LCP 改善）
   const optimized = await sharp(req.body)
     .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+    .withMetadata()
     .jpeg({ quality: 85, progressive: true })
     .toBuffer();
   await fs.writeFile(filePath, optimized);

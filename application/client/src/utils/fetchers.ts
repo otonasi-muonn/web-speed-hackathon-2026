@@ -1,5 +1,3 @@
-import { gzip } from "pako";
-
 export class HttpError extends Error {
   status: number;
   responseJSON: unknown;
@@ -74,6 +72,7 @@ export async function sendFile<T>(url: string, file: File): Promise<T> {
 export async function sendJSON<T>(url: string, data: object): Promise<T> {
   const jsonString = JSON.stringify(data);
   const uint8Array = new TextEncoder().encode(jsonString);
+  const { gzip } = await import("pako");
   const compressed = gzip(uint8Array);
 
   const res = await fetchWithError(url, {

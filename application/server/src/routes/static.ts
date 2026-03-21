@@ -11,6 +11,7 @@ import {
   PUBLIC_PATH,
   UPLOAD_PATH,
 } from "@web-speed-hackathon-2026/server/src/paths";
+import { Post } from "@web-speed-hackathon-2026/server/src/models";
 
 export const staticRouter = Router();
 
@@ -19,6 +20,10 @@ const STATIC_MAX_AGE_SECONDS = 86400;
 const HASH_ASSET_RE = /\.[0-9a-f]{8,}\.(js|css|woff2?)$/i;
 
 const _imageCache = new Map<string, Buffer>();
+
+// index.html に初期 posts データを注入したキャッシュ（LCP 改善: API 往復を排除）
+let _htmlWithDataCache: { html: string; ts: number } | null = null;
+const HTML_CACHE_TTL_MS = 15000;
 
 // SPA 対応のため、ファイルが存在しないときに index.html を返す
 staticRouter.use(history());
@@ -66,8 +71,10 @@ staticRouter.use(async (req, res, next) => {
   if (filePath === null) return next();
 
   try {
+    const isProfileImage = req.path.startsWith("/images/profiles/");
+    const resizeSize = isProfileImage ? 150 : 800;
     const buffer = await sharp(filePath)
-      .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+      .resize(resizeSize, resizeSize, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: 82 })
       .toBuffer();
     _imageCache.set(cacheKey, buffer);
@@ -99,6 +106,40 @@ staticRouter.use(
     },
   }),
 );
+
+// index.html に初期 posts データを埋め込んで返す（React マウント直後に即描画可能）
+staticRouter.use(async (req, res, next) => {
+  if (req.method !== "GET") return next();
+  if (req.path !== "/index.html") return next();
+  if (!(req.headers["accept"] ?? "").includes("text/html")) return next();
+
+  const htmlPath = path.resolve(CLIENT_DIST_PATH, "index.html");
+  try {
+    const now = Date.now();
+    let html: string;
+    if (_htmlWithDataCache && now - _htmlWithDataCache.ts < HTML_CACHE_TTL_MS) {
+      html = _htmlWithDataCache.html;
+    } else {
+      const [baseHtml, initialPosts] = await Promise.all([
+        fs.readFile(htmlPath, "utf-8"),
+        Post.findAll({ limit: 30, offset: 0 }),
+      ]);
+      const json = JSON.stringify(initialPosts)
+        .replace(/<\/script>/gi, "<\\/script>")
+        .replace(/<!--/gi, "<\\!--");
+      html = baseHtml.replace(
+        "</head>",
+        `<script id="__initial_posts__" type="application/json">${json}</script></head>`,
+      );
+      _htmlWithDataCache = { html, ts: now };
+    }
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache");
+    return res.send(html);
+  } catch {
+    return next();
+  }
+});
 
 staticRouter.use(
   serveStatic(CLIENT_DIST_PATH, {

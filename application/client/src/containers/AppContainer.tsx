@@ -4,8 +4,13 @@ import { createPortal } from "react-dom";
 import { Route, Routes, useLocation, useNavigate } from "react-router";
 
 import { Navigation } from "@web-speed-hackathon-2026/client/src/components/application/Navigation";
-import { AuthModalContainer } from "@web-speed-hackathon-2026/client/src/containers/AuthModalContainer";
 import { fetchJSON, sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
+
+const AuthModalContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/AuthModalContainer").then((m) => ({
+    default: m.AuthModalContainer,
+  })),
+);
 
 const CrokContainer = lazy(() =>
   import("@web-speed-hackathon-2026/client/src/containers/CrokContainer").then((m) => ({
@@ -98,11 +103,7 @@ export const AppContainer = () => {
         : null}
 
       <main>
-        <Suspense fallback={
-          <div style={{ alignItems: "center", display: "flex", inset: 0, justifyContent: "center", pointerEvents: "none", position: "fixed" }}>
-            <p className="text-cax-text-muted text-lg">読込中...</p>
-          </div>
-        }>
+        <Suspense fallback={null}>
           <Routes>
             <Route element={<TimelineContainer />} path="/" />
             <Route
@@ -128,7 +129,9 @@ export const AppContainer = () => {
         </Suspense>
       </main>
 
-      <AuthModalContainer id={AUTH_MODAL_ID} onUpdateActiveUser={setActiveUser} />
+      <Suspense fallback={null}>
+        <AuthModalContainer id={AUTH_MODAL_ID} onUpdateActiveUser={setActiveUser} />
+      </Suspense>
       <Suspense fallback={null}>
         <NewPostModalContainer id={NEW_POST_MODAL_ID} />
       </Suspense>

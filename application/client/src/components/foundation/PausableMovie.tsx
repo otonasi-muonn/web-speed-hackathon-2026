@@ -86,6 +86,7 @@ export const PausableMovie = ({ src }: Props) => {
         <img
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
+          fetchPriority="high"
           src={thumbSrc}
         />
         {/* Canvas animation on top when near viewport (masked by dynamicMediaMask in VRT) */}
